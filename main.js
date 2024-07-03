@@ -120,7 +120,7 @@ const products = {
             preise: {
                 "24 Std": 20,
                 "3 Tage": 50,
-                "3 Tage": 80,
+                "5 Tage": 80,
             },
             abrechnung: "nachZeit",
             steuer: "19%",
@@ -132,7 +132,7 @@ const products = {
             preise: {
                 "24 Std": 30,
                 "3 Tage": 80,
-                "3 Tage": 120,
+                "5 Tage": 120,
             },
             abrechnung: "nachZeit",
             steuer: "19%",
