@@ -240,6 +240,8 @@ function priceCalc(productDetails, quantity, unit) {
         if (regex.test(thisUnit)) {
             // ===========
             // Hier gehts weiter
+            // Preise mit Tagen filtern
+            // if (quantity > preis mit höchster quantity) {frage: individualpreis ausgemacht? ja --> individualer Preis / nein: höchster Preis + rest} else (preis > zweithöchster quantity) {preis = der preis der höchsten quantity} else ...
 
             // ==========
             return `Klappt`;
