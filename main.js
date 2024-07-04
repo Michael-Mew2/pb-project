@@ -95,7 +95,7 @@ const products = {
                 "5 Tage": 270,
             },
             abrechnung: "nachZeit",
-            steuer: "19%",
+            steuer: 19,
         },
 
         "0014": {
@@ -109,7 +109,7 @@ const products = {
                 "3 Tage": 350,
             },
             abrechnung: "nachZeit",
-            steuer: "19%",        
+            steuer: 19,        
         },
     },
 
@@ -123,7 +123,7 @@ const products = {
                 "5 Tage": 80,
             },
             abrechnung: "nachZeit",
-            steuer: "19%",
+            steuer: 19,
         },
 
         "0024": {
@@ -135,7 +135,7 @@ const products = {
                 "5 Tage": 120,
             },
             abrechnung: "nachZeit",
-            steuer: "19%",
+            steuer: 19,
         },
     }
 }
@@ -187,7 +187,7 @@ class Customer {
 
 // ----------
 
-class ShoppingCart {
+class Bill {
     constructor(){
         this.items = [];
     }
@@ -212,13 +212,8 @@ class ShoppingCart {
             tax: productDetails.steuer,
             grossPrice: priceCalc(productDetails, getQuantityAsNumber(quantity), getUnit(quantity)), // Preis nach steuern
         });
-        console.log(this.items);
+        //console.log(this.items);
     }
-
-    printBill() {
-        console.log("Rechnung");
-    }
-    
 }
 // ^^ Muss vor dem eigentlichen Funktionsaufruf stehen!! ^^
 
@@ -241,7 +236,7 @@ function priceCalc(productDetails, quantity, unit) {
         const thisUnit = unit;
         let regexDay = /Tag[e]/i;
         let regexHour = /Std/i;
-        console.log(regexDay.test(thisUnit));
+        // console.log(regexDay.test(thisUnit));
         if (regexDay.test(thisUnit)) {
             const grossPriceDay = getPrice(productDetails, quantity, regexDay)
             return grossPriceDay
@@ -259,7 +254,7 @@ function priceCalc(productDetails, quantity, unit) {
 function getPrice(productDetails, quantity, regex) {
 
     const priceKeys = Object.keys(productDetails.preise);
-    console.log("priceKeys",priceKeys);
+    // console.log("priceKeys",priceKeys);
 
     const filterBy = key => regex.test(key) // Ermitteln der Preise nach Tagen
 
@@ -291,13 +286,13 @@ function finalPrice(object, targetValue, regex) {
         newObj[newKey] = object[key]
     }
 
-    console.log(newObj);
+    // console.log(newObj);
 
     
     const sortedKeys = Object.keys(newObj).sort((a, b) => parseInt(a) - parseInt(b));
-    console.log(sortedKeys);
+    // console.log(sortedKeys);
     const highestValue = sortedKeys[sortedKeys.length - 1];
-    console.log("highest Value", highestValue);
+    // console.log("highest Value", highestValue);
     
     if (Object.keys(newObj).length <= 1) {
         return newObj[highestValue];
@@ -314,7 +309,7 @@ function finalPrice(object, targetValue, regex) {
         if (parseInt(sortedKeys[i]) < targetValue && targetValue <= parseInt(sortedKeys[i + 1])) {
             
             // Wenn die Zielzahl zwischen zwei Werten liegt, geben Sie den höheren Wert und dessen Beschreibung zurück
-            console.log("wo ist das", newObj[sortedKeys[i + 1]]);
+            // console.log("wo ist das", newObj[sortedKeys[i + 1]]);
             return newObj[sortedKeys[i + 1]]
         }
         if (targetValue = parseInt(sortedKeys[i])){
@@ -608,7 +603,7 @@ function writeBill(status, workAccount, selectedCustomer) {
     const boughtByName = `${selectedCustomer.firstName} ${selectedCustomer.lastName}`;
 
     console.log(`--------\nRechnung Nr. ${billNumber} an ${boughtByName}\n`);
-    const cart = new ShoppingCart();
+    const cart = new Bill();
     cart.addCustomerInfos(boughtByID, boughtByName, billNumber)
     let productCounter = 0;
 
@@ -628,7 +623,8 @@ function writeBill(status, workAccount, selectedCustomer) {
         addMoreProducts = readlineSync.question(`Willst du noch weitere produkt/Dienstleistungen hinzufügen?\n(ja/nein)\n> `);
     } while (addMoreProducts !== "nein");
 
-    cart.printBill()
+    console.clear();
+    visualizeBill(cart);
 }
 
 function generateBillNumber() {
@@ -658,3 +654,34 @@ function findCategory(boughtProduct) {
 
 
 // ----------
+
+// Rechnung anzeigen:
+
+function visualizeBill(obj) {
+    console.log(`Rechnung\n`);
+    console.log(`Rechnungsnummer: ${obj.items[0].billingNumber}`);
+    console.log(`Kunde: ${obj.items[0].customerName}`);
+    console.log(`Kunden-Nr: ${obj.items[0].customerId}`);
+    console.log(`----- ----- ----- -----\n`);
+
+    const simplerObj = obj.items;
+    let totalNet = 0
+    let totalGross = 0;
+
+    for (let i = 1; i < simplerObj.length; i++) {
+        let thing = simplerObj[i];
+        let taxDivider = parseInt(thing.tax) + 100
+        taxDivider /= 100
+        console.log(`${thing.nr}. | ${thing.product} | ${thing.quantity} ${thing.unit} | ${thing.tax}% | ${(parseInt(thing.grossPrice / taxDivider)).toFixed(2)} € | ${(parse(thing.grossPrice)).toFixed(2)} €`);
+        totalNet += parseInt(thing.grossPrice / taxDivider)
+        totalGross += (parseInt(thing.grossPrice)).toFixed(2)
+    }
+
+    console.log(`\n----- ----- ----- ----- ----- ----- ----- -----\n`);
+
+    console.log(`zu zahlender Betrag (ohne Steuern): ${totalNet} €\n`); // Falsche preise 
+    console.log(`zu zahlender Betrag (mit Steuern): ${totalGross} €\n`);
+    
+}
+
+// --------------
