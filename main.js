@@ -214,6 +214,10 @@ class ShoppingCart {
         });
         console.log(this.items);
     }
+
+    printBill() {
+        console.log("Rechnung");
+    }
     
 }
 // ^^ Muss vor dem eigentlichen Funktionsaufruf stehen!! ^^
@@ -235,22 +239,94 @@ function getUnit(quantity) {
 function priceCalc(productDetails, quantity, unit) {
     if (productDetails.abrechnung === "nachZeit") {
         const thisUnit = unit;
-        let regex = /Tag*/i;
-        console.log(regex.test(thisUnit));
-        if (regex.test(thisUnit)) {
-            // ===========
-            // Hier gehts weiter
-            // Preise mit Tagen filtern
-            // if (quantity > preis mit höchster quantity) {frage: individualpreis ausgemacht? ja --> individualer Preis / nein: höchster Preis + rest} else (preis > zweithöchster quantity) {preis = der preis der höchsten quantity} else ...
+        let regexDay = /Tag[e]/i;
+        let regexHour = /Std/i;
+        console.log(regexDay.test(thisUnit));
+        if (regexDay.test(thisUnit)) {
+            const grossPriceDay = getPrice(productDetails, quantity, regexDay)
+            return grossPriceDay
 
-            // ==========
-            return `Klappt`;
+        } else if (regexHour.test(thisUnit)) {
+            const grossPriceHour = getPrice(productDetails, quantity, regexHour)
+            return grossPriceHour
+
         } else {
             return `Klappt nicht`
         }
     }
 }
 
+function getPrice(productDetails, quantity, regex) {
+
+    const priceKeys = Object.keys(productDetails.preise);
+    console.log("priceKeys",priceKeys);
+
+    const filterBy = key => regex.test(key) // Ermitteln der Preise nach Tagen
+
+    const filteredUnits = priceKeys.filter(filterBy);
+
+    
+    const filteredPrices = {};
+    filteredUnits.forEach(key => {
+        filteredPrices[key] = productDetails.preise[key];
+    });
+    
+
+
+    const result = finalPrice(filteredPrices, quantity, regex);
+    if (result !== null) {
+        return result
+    } else {
+        console.log('Kein passender Wert gefunden');
+    }
+
+}
+
+function finalPrice(object, targetValue, regex) {
+    const newObj = {};
+
+
+    for (let key in object) {
+        let newKey = key.replace(regex , "").trim()
+        newObj[newKey] = object[key]
+    }
+
+    console.log(newObj);
+
+    
+    const sortedKeys = Object.keys(newObj).sort((a, b) => parseInt(a) - parseInt(b));
+    console.log(sortedKeys);
+    const highestValue = sortedKeys[sortedKeys.length - 1];
+    console.log("highest Value", highestValue);
+    
+    if (Object.keys(newObj).length <= 1) {
+        return newObj[highestValue];
+    }
+
+    if (parseInt(targetValue) > parseInt(highestValue)) {
+        console.log("Der angegebene Wert liegt außerhalb der definierten Werte. Bitte geben Sie den Preis manuell ein:");
+        let userInput = readlineSync.question("Geben Sie den Preis (ohne Währungszeichen) ein: ");
+        
+        return userInput
+    }
+
+    for (let i = 0; i < sortedKeys.length - 1; i++) {
+        if (parseInt(sortedKeys[i]) < targetValue && targetValue <= parseInt(sortedKeys[i + 1])) {
+            
+            // Wenn die Zielzahl zwischen zwei Werten liegt, geben Sie den höheren Wert und dessen Beschreibung zurück
+            console.log("wo ist das", newObj[sortedKeys[i + 1]]);
+            return newObj[sortedKeys[i + 1]]
+        }
+        if (targetValue = parseInt(sortedKeys[i])){
+            console.log("wo ist das", newObj[sortedKeys[i]]);
+            return newObj[sortedKeys[i]]
+        }
+    }
+
+    if (targetValue < 0) {
+        return null; // Kein passender Wert gefunden
+    }
+}
 
 
 // ==========
@@ -551,6 +627,8 @@ function writeBill(status, workAccount, selectedCustomer) {
 
         addMoreProducts = readlineSync.question(`Willst du noch weitere produkt/Dienstleistungen hinzufügen?\n(ja/nein)\n> `);
     } while (addMoreProducts !== "nein");
+
+    cart.printBill()
 }
 
 function generateBillNumber() {
