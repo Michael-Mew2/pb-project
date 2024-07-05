@@ -29,6 +29,7 @@ function findMatchingValueAndCheckSubtractions(object, initialTargetValue) {
             // Überprüfen, ob die Zielzahl zwischen zwei aufeinanderfolgenden Werten liegt
             for (let i = 0; i < sortedKeys.length - 1; i++) {
                 if (parseInt(sortedKeys[i]) < targetValue && targetValue < parseInt(sortedKeys[i + 1])) {
+                    
                     // Wenn die Zielzahl zwischen zwei Werten liegt, geben Sie den höheren Wert und dessen Beschreibung zurück
                     return { highestKey: parseInt(sortedKeys[i + 1]), highestValue: object[sortedKeys[i + 1]], finalTargetValue: targetValue, subtractedValues, sumOfSubtractedValues };
                 }
