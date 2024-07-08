@@ -640,6 +640,9 @@ function writeBill(status, workAccount, selectedCustomer) {
     if (printPDF === "ja") {
         generateBillAsPdf(cart);;
     }
+
+    chooseFunction(status, workAccount)
+
 }
 
 function generateBillNumber() {
