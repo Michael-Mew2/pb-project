@@ -65,11 +65,11 @@ const autoTable = require("jspdf-autotable");
 let generalCounter = 1;
 
 const agents = {
-    "0": {
-        empNumber: "0",
-        password: "0",
-        firstName: "Torben",
-        lastName: "Testuser",
+    "0010": {
+        empNumber: "0010",
+        password: "passwort",
+        firstName: "Michael",
+        lastName: "Öhmm",
         department: "manager",
         isAdmin: true,
     },
@@ -343,6 +343,7 @@ start();
 // Startsequenz mit Log-in:
 
 function start() {
+    console.clear();
     console.log("Guten Morgen");
     let isLoggedIn = false;
     let loggedAccount = "";
@@ -641,6 +642,7 @@ function writeBill(status, workAccount, selectedCustomer) {
         generateBillAsPdf(cart);;
     }
 
+    console.clear();
     chooseFunction(status, workAccount)
 
 }
