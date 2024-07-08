@@ -53,14 +53,23 @@ const { Agent } = require('http');
 const readlineSync = require('readline-sync');
 // ----------
 
+// jsPDF
+
+const { jsPDF } = require("jspdf");
+const autoTable = require("jspdf-autotable");
+
+
+
+
+// -----------
 let generalCounter = 1;
 
 const agents = {
-    "0": {
-        empNumber: "0",
-        password: "0",
-        firstName: "Torben",
-        lastName: "Testuser",
+    "0010": {
+        empNumber: "0010",
+        password: "passwort",
+        firstName: "Michael",
+        lastName: "Öhmm",
         department: "manager",
         isAdmin: true,
     },
@@ -313,7 +322,7 @@ function finalPrice(object, targetValue, regex) {
             return newObj[sortedKeys[i + 1]]
         }
         if (targetValue = parseInt(sortedKeys[i])){
-            console.log("wo ist das", newObj[sortedKeys[i]]);
+            // console.log("wo ist das", newObj[sortedKeys[i]]);
             return newObj[sortedKeys[i]]
         }
     }
@@ -334,6 +343,7 @@ start();
 // Startsequenz mit Log-in:
 
 function start() {
+    console.clear();
     console.log("Guten Morgen");
     let isLoggedIn = false;
     let loggedAccount = "";
@@ -625,6 +635,16 @@ function writeBill(status, workAccount, selectedCustomer) {
 
     console.clear();
     visualizeBill(cart);
+
+    printPDF = readlineSync.question(`Willst du die Rechnung als PDF ausdrucken?\n(ja/nein)\n> `);
+
+    if (printPDF === "ja") {
+        generateBillAsPdf(cart);;
+    }
+
+    console.clear();
+    chooseFunction(status, workAccount)
+
 }
 
 function generateBillNumber() {
@@ -633,7 +653,7 @@ function generateBillNumber() {
     const billCounter = String(generalCounter).padStart(3, '0'); // Fügt Nullen am Anfang hinzu, falls nötig
     generalCounter++;
     
-    return `K${billDate}${billCounter}`;
+    return `R${billDate}${billCounter}`;
 }
 
 function findCategory(boughtProduct) {
@@ -647,6 +667,7 @@ function findCategory(boughtProduct) {
     
         default:
             console.log("Produkt konnte nicht gefunden werden.");
+            findCategory(status, workAccount, selectedCustomer)
             break;
     }
 }
@@ -670,11 +691,20 @@ function visualizeBill(obj) {
 
     for (let i = 1; i < simplerObj.length; i++) {
         let thing = simplerObj[i];
+
         let taxDivider = parseInt(thing.tax) + 100
         taxDivider /= 100
-        console.log(`${thing.nr}. | ${thing.product} | ${thing.quantity} ${thing.unit} | ${thing.tax}% | ${(parseInt(thing.grossPrice / taxDivider)).toFixed(2)} € | ${(parse(thing.grossPrice)).toFixed(2)} €`);
-        totalNet += parseInt(thing.grossPrice / taxDivider)
-        totalGross += (parseInt(thing.grossPrice)).toFixed(2)
+
+        let singleGrossPrice = parseFloat(thing.grossPrice);
+        let singleNetPrice = parseFloat(thing.grossPrice / taxDivider);
+
+        let fixedGrossPrice =  singleGrossPrice.toFixed(2);
+        let fixedNetPrice = singleNetPrice.toFixed(2);
+
+        console.log(`${thing.nr}. | ${thing.product} | ${thing.quantity} ${thing.unit} | ${thing.tax}% | ${fixedNetPrice} € | ${(singleGrossPrice)} €`);
+
+        totalNet += parseFloat(fixedNetPrice)
+        totalGross += parseFloat(fixedGrossPrice)
     }
 
     console.log(`\n----- ----- ----- ----- ----- ----- ----- -----\n`);
@@ -685,3 +715,75 @@ function visualizeBill(obj) {
 }
 
 // --------------
+
+// print PDF
+
+function generateBillAsPdf(obj) {
+    // PDF mit der Class jsPDF erstellen:
+    const doc = new jsPDF();
+
+
+
+    const tableData = {
+        head: [["Pos.", "Bezeichnung", "Menge", "Einheit", "Preis/Einheit", "MwSt%", "Ges. ohne MwSt%", "Ges. mit MwSt%"]],
+        body: [],
+        theme: "plain",
+    };
+
+    // Inhalt der Tabelle:
+    const simplerObj = obj.items;
+
+    let totalNet = 0
+    let totalGross = 0;
+
+    for (let i = 1; i < simplerObj.length; i++) {
+        let thing = simplerObj[i];
+
+        // Preis Kalkulation:
+        let taxDivider = parseInt(thing.tax) + 100
+        taxDivider /= 100
+
+        
+        let singleGrossPrice = parseFloat(thing.grossPrice);
+        let singleNetPrice = parseFloat(thing.grossPrice / taxDivider);
+        let singleUnitPrice = parseFloat(thing.grossPrice / thing.quantity)
+        
+        // Inhalt der Tabelle:
+        const pos = thing.nr;
+        const prodName = thing.product;
+        const prodQuantity = thing.quantity;
+        const prodUnit = thing.unit;
+        let fixedSingleUnitPrice = singleUnitPrice.toFixed(2);
+        const prodTax = thing.tax;
+        let fixedGrossPrice =  singleGrossPrice.toFixed(2);
+        let fixedNetPrice = singleNetPrice.toFixed(2);
+
+        // Einfügen in eine Zeile:
+        tableData.body.push([pos, prodName, prodQuantity, prodUnit, fixedSingleUnitPrice, prodTax, fixedNetPrice, fixedGrossPrice])
+
+        // Berechnung des Totals:
+        totalNet += parseFloat(fixedNetPrice)
+        totalGross += parseFloat(fixedGrossPrice)
+        
+    }
+
+    const searchById = customers.find(customer => customer.id === simplerObj[0].customerId)
+
+    // Adresse Kunde:
+    doc.setFontSize(10); 
+    doc.text(`${searchById.firstName} ${searchById.lastName}\n${searchById.address.street} ${searchById.address.number}\n${searchById.address.zipCode} ${searchById.address.city}`, 20, 40); 
+
+    doc.autoTable(tableData);
+
+    const pageHeight = doc.internal.pageSize.height;
+
+    // Basierend auf der Anzahl der Seiten und der Höhe der Seite, schätzen Sie die Höhe der Tabelle
+    // Dies ist eine grobe Schätzung und kann angepasst werden
+    const estimatedTableHeight = pageHeight * 0.6; // Annahme: 60% der Seite ist die Tabelle
+
+    // text unterhalb der Tabelle:
+    doc.setFontSize(14);
+    doc.text(`Zu zahlender gesammt Betrag: ${totalGross}€`, 20, pageHeight - estimatedTableHeight - 20);
+
+    doc.save(`Rechnung_${simplerObj[0].billingNumber}.pdf`);
+}
